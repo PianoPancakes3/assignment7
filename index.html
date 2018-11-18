@@ -1,0 +1,391 @@
+<head>
+	<title>Turtle Attack!</title>
+	<meta charset="UTF-8">
+</head>
+<body>
+<br>
+<canvas id="myCanvas" width="1000" height="500" style="border:1px solid #cccccc;"></canvas>
+
+<script type="text/javascript">
+
+class Sprite
+{
+	constructor(model, x, y, h, w, image_url, update_method, onclick_method, identifier)
+	{
+		this.model = model;
+		this.x = x;
+		this.y = y;
+		this.h = h;
+		this.w = w;
+		this.image = new Image();
+		this.image.src = image_url;
+		this.update = update_method;
+		this.onclick = onclick_method;
+		this.vert_vel = 0;
+		this.horz_vel = 0;
+		this.solid_ground = 0;
+		this.marioFrame = 0
+		this.prev_x = 0;
+		this.prev_y = 0;
+		this.identifier = identifier;
+		this.coinCount = 5;
+	}
+
+	set_destination(x, y)
+	{
+		this.dest_x = x;
+		this.dest_y = y;
+	}
+
+	ignore_click(x, y)
+	{
+	}
+
+	prev_pos()
+	{
+		this.prev_x = this.x;
+		this.prev_y = this.y;
+	}
+	
+	mario_update()
+	{
+		this.prev_pos();
+		this.vert_vel += 3.1415;
+		this.y += this.vert_vel;
+		this.solid_ground++;
+		this.model.scrollPos = this.x - 96;
+
+		//keep mario from going through bottom
+		if(this.y > 357)
+		{
+			this.y = 357
+			this.vert_vel = 0.0;
+			this.solid_ground = 0;
+		}		
+		
+		//keep mario from going through top
+		if(this.y < 0)
+		{
+			this.vert_vel = 0;
+			this.y = 0;
+		}
+
+		if(this.x < 96)
+		{
+			this.x = 96;
+		}
+	}
+	
+	update()
+	{
+		this.y += this.vert_vel;
+		this.x += this.horz_vel;
+	}
+	
+	sit_still()
+	{
+	}
+}
+
+ 
+ 
+ 
+
+
+
+class Model
+{
+	constructor()
+	{
+		let self = this;
+		this.sprites = [];
+		this.mario = new Sprite(self, 96, 48, 95, 60, "mario1.png", Sprite.prototype.mario_update, Sprite.prototype.ignore_click, 0);
+		this.sprites.push(this.mario);
+		//bricks
+		this.sprites.push(new Sprite(self, 300, 270, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		this.sprites.push(new Sprite(self, 348, 270, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		this.sprites.push(new Sprite(self, 396, 270, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		//this.sprites.push(new Sprite(self, 250, 250, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		//this.sprites.push(new Sprite(self, 250, 250, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		//this.sprites.push(new Sprite(self, 250, 250, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		//this.sprites.push(new Sprite(self, 250, 250, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+		//this.sprites.push(new Sprite(self, 250, 250, 48, 48, "brick_image.png", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 1));
+
+		//coin blocks
+		this.sprites.push(new Sprite(self, 324, 75, 48, 48, "question_brick.jpg", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 2));
+		this.sprites.push(new Sprite(self, 372, 75, 48, 48, "question_brick.jpg", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 2));
+//		this.sprites.push(new Sprite(self, 298, 75, 48, 48, "question_brick.jpg", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 2));
+	//	this.sprites.push(new Sprite(self, 298, 75, 48, 48, "question_brick.jpg", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 2));
+		//this.sprites.push(new Sprite(self, 298, 75, 48, 48, "question_brick.jpg", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 2));
+		//this.sprites.push(new Sprite(self, 298, 75, 48, 48, "question_brick.jpg", Sprite.prototype.sit_still, Sprite.prototype.ignore_click, 2));
+
+		this.scrollPos = 96;
+	}
+
+	update()
+	{
+		for(let i = 0; i < this.sprites.length; i++)
+		{
+			this.sprites[i].update();
+		}
+		
+		//check for collisions
+		for(let i = 1; i < this.sprites.length; i++)
+		{
+			if(this.doesCollide(this.sprites[i]))
+			{	
+				if(this.sprites[i].identifier == 2)
+					if((this.mario.y <= this.sprites[i].y + this.sprites[i].h) && (this.mario.prev_y > this.sprites[i].y + this.sprites[i].h))
+						this.popOut(this.sprites[i]);
+				this.getOut(this.sprites[i]);
+			}
+		}
+	}
+
+	onclick(x, y)
+	{
+		for(let i = 0; i < this.sprites.length; i++)
+		{
+			this.sprites[i].onclick(x, y);
+		}
+	}
+	
+	popOut(cb)
+	{
+		if(cb.coinCount != 0)
+		{
+			console.log("pop out coin");
+			this.sprites.push(new Sprite(this.model, cb.x, cb.y, 48, 48, "coin.jpg", Sprite.prototype.update, Sprite.prototype.ignore_click, 3));
+			cb.coinCount--;
+			for(let i = 0; i < this.sprites.length; i++)
+			{
+				if(this.sprites[i].identifier == 3)
+				{
+					this.sprites[i].vert_vel = 12;
+					this.sprites[i].horz_vel = Math.floor(Math.random() * 11);
+					//if(this.sprites[i].y > 357)
+						//this.sprites.pop(i);					
+				}
+			}
+		}
+		else
+		{
+			cb.image.src = "blank_brick.jpg";
+		}
+	}
+	
+	
+	doesCollide(b)
+	{
+		if (this.mario.x + this.mario.w <= b.x) 
+			return false;
+		if (this.mario.x >= b.x + b.w) 
+			return false
+		if (this.mario.y >= b.y + b.h) 
+			return false;
+		if (this.mario.y + this.mario.h <= b.y) 
+			return false;
+		else
+			return true;
+	
+	}
+	getOut(s)
+	{
+		if((this.mario.x + this.mario.w > s.x) && (this.mario.prev_x + this.mario.w <= s.x))
+		{
+			console.log("mario hit the left");
+			this.mario.x = s.x - this.mario.w;
+		}
+		if((this.mario.x < s.x + s.w) && (this.mario.prev_x >= s.x + s.w))
+		{
+			console.log("mario hit the right");
+			this.mario.x = s.x + s.w;
+		}
+		if((this.mario.y + this.mario.h > s.y) && (this.mario.prev_y + this.mario.h <= s.y))
+		{
+			console.log("mario hit the top");
+			this.mario.y = s.y - this.mario.h;
+			this.mario.solid_ground = 0;
+			this.mario.vert_vel = 0;
+		}
+		if((this.mario.y < s.y + s.h) && (this.mario.prev_y >= s.y + s.h))
+		{
+			console.log("mario hit the bottom");
+			this.mario.y = s.y + s.h;
+			this.mario.vert_vel = 0;
+		}
+	}	
+}
+
+
+
+
+class View
+{
+	constructor(model)
+	{
+		this.model = model;
+		this.canvas = document.getElementById("myCanvas");
+		this.mario = new Image();
+		this.mario.src = "mario1.png";
+		
+		//load images
+		this.mario_images = [];
+		this.mario_images[0] = new Image();
+		this.mario_images[0].src = "mario1.png";
+		this.mario_images[1] = new Image();
+		this.mario_images[1].src = "mario2.png";
+		this.mario_images[2] = new Image();
+		this.mario_images[2].src = "mario3.png";
+		this.mario_images[3] = new Image();
+		this.mario_images[3].src = "mario4.png";
+		this.mario_images[4] = new Image();
+		this.mario_images[4].src = "mario5.png";
+	}
+
+	update()
+	{
+		let ctx = this.canvas.getContext("2d");
+		ctx.clearRect(0, 0, 1000, 500);
+
+		//draw ground
+		this.ground_image = new Image();
+		this.ground_image.src = "ground_texture.png";
+		for(let i = -96; i < this.model.scrollPos +1008; i+=48)
+		{
+			ctx.drawImage(this.ground_image, i - this.model.scrollPos/6, 452);
+		}
+		
+		//draw background
+		this.background = new Image();
+		this.background.src = "mario_background.jpg";
+		for(let i = -96; i < this.model.scrollPos + 1550; i+=775)
+		{
+			ctx.drawImage(this.background, i - this.model.scrollPos/3, 0)
+		}	
+		
+		//Draw sprites
+		for(let i = 0; i < this.model.sprites.length; i++)
+		{
+			let sprite = this.model.sprites[i];
+			if(i == 0)
+			{
+				this.frame = (this.model.mario.x/6)%5;
+				this.mario = this.mario_images[this.frame];
+				ctx.drawImage(this.mario, sprite.x, sprite.y);
+			}
+			else
+			{
+				if(this.model.mario.x >=96)
+					ctx.drawImage(sprite.image, sprite.x - (this.model.scrollPos/6)+12, sprite.y);
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+class Controller
+{
+	constructor(model, view)
+	{
+		this.model = model;
+		this.view = view;
+		this.key_right = false;
+		this.key_left = false;
+		this.key_up = false;
+		this.key_down = false;
+		this.key_space = false;
+		let self = this;
+		view.canvas.addEventListener("click", function(event) { self.onClick(event); });
+		document.addEventListener('keydown', function(event) { self.keyDown(event); }, false);
+		document.addEventListener('keyup', function(event) { self.keyUp(event); }, false);
+	}
+
+	onClick(event)
+	{
+		this.model.onclick(event.pageX - this.view.canvas.offsetLeft, event.pageY - this.view.canvas.offsetTop);
+	}
+
+	keyDown(event)
+	{
+		if(event.keyCode == 39) this.key_right = true;
+		else if(event.keyCode == 37) this.key_left = true;
+		else if(event.keyCode == 38) this.key_up = true;
+		else if(event.keyCode == 40) this.key_down = true;
+		else if(event.keyCode == 32) this.key_space = true;
+	}
+
+	keyUp(event)
+	{
+		if(event.keyCode == 39) this.key_right = false;
+		else if(event.keyCode == 37) this.key_left = false;
+		else if(event.keyCode == 38) this.key_up = false;
+		else if(event.keyCode == 40) this.key_down = false;
+		else if(event.keyCode == 32) this.key_space = false;
+	}
+
+	update()
+	{
+		if(this.key_right)
+		{
+			this.model.mario.x +=6;
+			for(let i = 1; i < this.model.sprites.length; i++)
+			{
+				let sprite = this.model.sprites[i];
+				if(this.model.mario.x > 96)
+					sprite.x = sprite.x - (this.model.scrollPos/6);
+			}
+		}
+		if(this.key_left) 
+		{
+			this.model.mario.x -= 6;	
+			for(let i = 1; i < this.model.sprites.length; i++)
+			{
+				let sprite = this.model.sprites[i];
+				if(this.model.mario.x > 96)
+					sprite.x = sprite.x + (this.model.scrollPos/6);
+			}
+		}
+		if(this.key_space)
+		{
+			if(this.model.mario.solid_ground < 8)
+			{
+				this.model.mario.vert_vel -= 6.5;
+			}
+		}
+	}
+}
+
+
+
+
+
+class Game
+{
+	constructor()
+	{
+		this.model = new Model();
+		this.view = new View(this.model);
+		this.controller = new Controller(this.model, this.view);
+	}
+
+	onTimer()
+	{
+		this.controller.update();
+		this.model.update();
+		this.view.update();
+	}
+}
+
+
+let game = new Game();
+let timer = setInterval(function() { game.onTimer(); }, 40);
+
+</script>
+
+</body>
